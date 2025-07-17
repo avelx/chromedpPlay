@@ -1,21 +1,37 @@
 package main
 
 import (
-	"fmt"
+	"context"
+	"github.com/chromedp/chromedp"
+	"log"
+	"time"
 )
 
-//TIP <p>To run your code, right-click the code and select <b>Run</b>.</p> <p>Alternatively, click
-// the <icon src="AllIcons.Actions.Execute"/> icon in the gutter and select the <b>Run</b> menu item from here.</p>
-
 func main() {
-	//TIP <p>Press <shortcut actionId="ShowIntentionActions"/> when your caret is at the underlined text
-	// to see how GoLand suggests fixing the warning.</p><p>Alternatively, if available, click the lightbulb to view possible fixes.</p>
-	s := "gopher"
-	fmt.Printf("Hello and welcome, %s!\n", s)
+	// create chrome instance
+	ctx, cancel := chromedp.NewContext(
+		context.Background(),
+		chromedp.WithDebugf(log.Printf),
+	)
+	defer cancel()
 
-	for i := 1; i <= 5; i++ {
-		//TIP <p>To start your debugging session, right-click your code in the editor and select the Debug option.</p> <p>We have set one <icon src="AllIcons.Debugger.Db_set_breakpoint"/> breakpoint
-		// for you, but you can always add more by pressing <shortcut actionId="ToggleLineBreakpoint"/>.</p>
-		fmt.Println("i =", 100/i)
+	// create a timeout
+	ctx, cancel = context.WithTimeout(ctx, 1*time.Second)
+	defer cancel()
+
+	// navigate to a page, wait for an element, click
+	var example string
+	err := chromedp.Run(ctx,
+		chromedp.Navigate(`https://ua.korrespondent.net/`),
+		// wait for footer element is visible (ie, page is loaded)
+		chromedp.WaitVisible(`body > footer`),
+		// find and click "Example" link
+		chromedp.Click(`holder_400x100_88`, chromedp.NodeVisible),
+		// retrieve the text of the textarea
+		chromedp.Value(`href`, &example),
+	)
+	if err != nil {
+		log.Fatal(err)
 	}
+	log.Printf("Go's time.After example:\n%s", example)
 }
